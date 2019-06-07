@@ -57,6 +57,7 @@ Current Features or To-Do
 - [ ] Supports: adapters for sitemap storage.
   - [x] Filesystem
   - [x] [S3](#upload-sitemap-to-s3)
+  - [x] [SCP](#upload-sitemap-via-scp)
 - [x] [Customizable sitemap working](#preventing-output)
 - [x] [Notifies search engines (Google, Bing) of new sitemaps](#pinging-search-engines)
 - [x] [Gives you complete control over your sitemap contents and naming scheme](#full-example)
@@ -152,6 +153,40 @@ func main() {
 	sm.Add(stm.URL{{"loc", "readme"}})
 	sm.Add(stm.URL{{"loc", "aboutme"}, {"priority", 0.1}})
 
+	sm.Finalize().PingSearchEngines()
+}
+```
+
+### Upload sitemap via SCP
+```go
+package main
+
+import (
+	"github.com/bramvdbogaerde/go-scp/auth"
+	"github.com/ikeikeikeike/go-sitemap-generator/stm"
+	"golang.org/x/crypto/ssh"
+	"time"
+)
+
+func main() {
+	sm := stm.NewSitemap(1)
+	sm.SetDefaultHost("http://example.com")
+	privKey, err := auth.PrivateKey("root", "/path/to/rsa/key", ssh.InsecureIgnoreHostKey())
+	if err != nil {
+		panic(err)
+	}
+	adapter, err := stm.NewSCPAdapter(privKey, "example:22", time.Minute)
+	if err != nil {
+		panic(err)
+	}
+	sm.SetAdapter(adapter)
+
+	sm.Create()
+
+	sm.Add(stm.URL{{"loc", "home"}, {"changefreq", "always"}, {"mobile", true}})
+	sm.Add(stm.URL{{"loc", "readme"}})
+	sm.Add(stm.URL{{"loc", "aboutme"}, {"priority", 0.1}})
+	
 	sm.Finalize().PingSearchEngines()
 }
 ```
